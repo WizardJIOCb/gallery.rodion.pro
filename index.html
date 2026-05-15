@@ -3,23 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Web Project Gallery</title>
+    <meta name="theme-color" content="#f7f7f8" />
+    <title>gallery.rodion.pro</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="app-shell">
+    <main class="app-shell">
       <header class="topbar">
         <div>
           <p class="eyebrow">gallery.rodion.pro</p>
           <h1>Галерея web-проектов</h1>
         </div>
-        <button class="primary-button" id="newProjectButton" type="button">
-          <span aria-hidden="true">+</span>
-          <span>Проект</span>
-        </button>
+        <button class="primary-button" id="newProjectButton" type="button">+ Проект</button>
       </header>
 
-      <main class="workspace">
+      <section class="workspace">
         <section class="panel library-panel" aria-label="Список проектов">
           <div class="toolbar">
             <label class="search-field">
@@ -53,15 +51,15 @@
           <div class="project-grid" id="projectGrid"></div>
           <div class="empty-state" id="emptyState" hidden>
             <h2>Проектов пока нет</h2>
-            <p>Список пуст.</p>
+            <p>Добавь первый сайт, прототип или локальный dev server.</p>
             <button class="secondary-button" id="emptyAddButton" type="button">Добавить проект</button>
           </div>
         </section>
 
         <aside class="panel detail-panel" aria-label="Детали проекта">
           <div class="detail-empty" id="detailEmpty">
-            <h2>Нет выбранного проекта</h2>
-            <p>Панель деталей пуста.</p>
+            <h2>Выбери проект</h2>
+            <p>Здесь появятся ссылка, заметки и быстрые данные для проверки.</p>
           </div>
 
           <article class="project-detail" id="projectDetail" hidden>
@@ -72,47 +70,37 @@
                 <h2 id="detailTitle"></h2>
               </div>
               <div class="icon-actions">
-                <button class="icon-button" id="editButton" type="button" title="Редактировать" aria-label="Редактировать">
-                  <span aria-hidden="true">✎</span>
-                </button>
-                <button class="icon-button danger" id="deleteButton" type="button" title="Удалить" aria-label="Удалить">
-                  <span aria-hidden="true">×</span>
-                </button>
+                <button class="icon-button" id="editButton" type="button" title="Редактировать" aria-label="Редактировать">✎</button>
+                <button class="icon-button danger" id="deleteButton" type="button" title="Удалить" aria-label="Удалить">×</button>
               </div>
             </div>
-
-            <p class="detail-description" id="detailDescription"></p>
+            <p id="detailDescription"></p>
             <div class="tag-list" id="detailTags"></div>
-
             <dl class="meta-list">
               <div>
                 <dt>URL</dt>
-                <dd><a id="detailUrl" href="#" target="_blank" rel="noreferrer"></a></dd>
+                <dd id="detailUrl"></dd>
               </div>
               <div>
-                <dt>Обновлен</dt>
+                <dt>Обновлено</dt>
                 <dd id="detailUpdated"></dd>
               </div>
             </dl>
-
             <div class="notes-block">
               <h3>Заметки</h3>
               <p id="detailNotes"></p>
             </div>
-
             <a class="primary-link" id="openProjectLink" href="#" target="_blank" rel="noreferrer">Открыть проект</a>
           </article>
         </aside>
-      </main>
-    </div>
+      </section>
+    </main>
 
     <dialog class="project-dialog" id="projectDialog">
       <form method="dialog" id="projectForm" class="project-form">
         <div class="form-header">
           <h2 id="formTitle">Новый проект</h2>
-          <button class="icon-button" value="cancel" type="button" id="closeDialogButton" title="Закрыть" aria-label="Закрыть">
-            <span aria-hidden="true">×</span>
-          </button>
+          <button class="icon-button" value="cancel" type="button" id="closeDialogButton" title="Закрыть" aria-label="Закрыть">×</button>
         </div>
 
         <input type="hidden" id="projectId" />

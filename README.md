@@ -2,11 +2,22 @@
 
 Статическая галерея для локальных и опубликованных web-проектов.
 
-Открой `index.html` в браузере. Данные хранятся в `localStorage` текущего браузера.
+## Команды
 
-## Возможности
+```powershell
+npm run build
+npm run serve
+```
 
-- добавление, редактирование и удаление проектов;
-- ссылки на локальные dev servers и опубликованные сайты;
-- статусы, теги, поиск и фильтрация;
-- заметки и превью по URL изображения.
+`npm run build` копирует `index.html`, `styles.css`, `app.js` и `README.md` в `dist/`.
+
+## Деплой
+
+Проект настроен в Codex Control:
+
+- GitHub: `https://github.com/WizardJIOCb/gallery.rodion.pro.git`
+- Server folder: `/var/www/gallery.rodion.pro`
+- Domain: `gallery.rodion.pro`
+- Deploy source: `dist`
+
+Деплой выполняется кнопкой `Deploy` в `codex.rodion.pro`.

@@ -84,22 +84,20 @@ document.querySelector("#editButton").addEventListener("click", () => {
   if (project) openDialog(project);
 });
 document.querySelector("#deleteButton").addEventListener("click", deleteSelectedProject);
-
+elements.form.addEventListener("submit", saveProject);
 elements.searchInput.addEventListener("input", render);
 elements.statusFilter.addEventListener("change", render);
-elements.form.addEventListener("submit", saveProject);
 
 render();
 
 function loadProjects() {
-  const rawProjects = localStorage.getItem(STORAGE_KEY);
-  if (!rawProjects) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleProjects));
-    return sampleProjects;
-  }
-
   try {
-    const parsed = JSON.parse(rawProjects);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleProjects));
+      return sampleProjects;
+    }
+    const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
@@ -110,94 +108,98 @@ function persistProjects() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
 }
 
+function getFilteredProjects() {
+  const query = elements.searchInput.value.trim().toLowerCase();
+  const status = elements.statusFilter.value;
+  return projects.filter((project) => {
+    const searchable = [project.name, project.url, project.description, project.notes, ...(project.tags ?? [])]
+      .join(" ")
+      .toLowerCase();
+    const matchesQuery = !query || searchable.includes(query);
+    const matchesStatus = status === "all" || project.status === status;
+    return matchesQuery && matchesStatus;
+  });
+}
+
 function render() {
   renderStats();
 
   const visibleProjects = getFilteredProjects();
-  elements.grid.innerHTML = "";
+  elements.grid.replaceChildren();
   elements.emptyState.hidden = visibleProjects.length > 0;
 
-  visibleProjects.forEach((project) => {
-    const card = document.createElement("button");
-    card.className = `project-card${project.id === selectedId ? " active" : ""}`;
-    card.type = "button";
-    card.addEventListener("click", () => {
-      selectedId = project.id;
-      render();
-    });
-
-    const thumb = createThumbnail(project);
-    const body = document.createElement("div");
-    body.className = "card-body";
-    body.innerHTML = `
-      <div class="card-topline">
-        <span class="status-pill ${statusClasses[project.status] ?? ""}">${statusLabels[project.status] ?? project.status}</span>
-      </div>
-      <h3>${escapeHtml(project.name)}</h3>
-      <p>${escapeHtml(project.description || "Без описания")}</p>
-      <div class="tag-list">${project.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>
-    `;
-
-    card.append(thumb, body);
-    elements.grid.append(card);
-  });
-
-  if (!projects.some((project) => project.id === selectedId)) {
-    selectedId = projects[0]?.id ?? null;
+  for (const project of visibleProjects) {
+    elements.grid.append(createProjectCard(project));
   }
 
+  if (!selectedId || !projects.some((project) => project.id === selectedId)) {
+    selectedId = visibleProjects[0]?.id ?? projects[0]?.id ?? null;
+  }
   renderDetail();
 }
 
 function renderStats() {
-  elements.totalCount.textContent = projects.length;
-  elements.testingCount.textContent = projects.filter((project) => project.status === "testing").length;
-  elements.readyCount.textContent = projects.filter((project) => project.status === "ready").length;
+  elements.totalCount.textContent = String(projects.length);
+  elements.testingCount.textContent = String(projects.filter((project) => project.status === "testing").length);
+  elements.readyCount.textContent = String(projects.filter((project) => project.status === "ready").length);
+}
+
+function createProjectCard(project) {
+  const button = document.createElement("button");
+  button.className = project.id === selectedId ? "project-card selected" : "project-card";
+  button.type = "button";
+  button.addEventListener("click", () => {
+    selectedId = project.id;
+    render();
+  });
+
+  button.append(createThumbnail(project));
+
+  const body = document.createElement("span");
+  body.className = "card-body";
+  body.innerHTML = `
+    <strong>${escapeHtml(project.name)}</strong>
+    <small>${escapeHtml(project.description || "Без описания")}</small>
+    <span class="status-pill ${statusClasses[project.status] ?? ""}">${statusLabels[project.status] ?? project.status}</span>
+  `;
+  button.append(body);
+  return button;
 }
 
 function renderDetail() {
   const project = projects.find((item) => item.id === selectedId);
   elements.detailEmpty.hidden = Boolean(project);
   elements.projectDetail.hidden = !project;
-
   if (!project) return;
 
   elements.detailPreview.replaceChildren(createThumbnail(project, "large"));
-  elements.detailStatus.className = `status-pill ${statusClasses[project.status] ?? ""}`;
   elements.detailStatus.textContent = statusLabels[project.status] ?? project.status;
+  elements.detailStatus.className = `status-pill ${statusClasses[project.status] ?? ""}`;
   elements.detailTitle.textContent = project.name;
-  elements.detailDescription.textContent = project.description || "Без описания";
-  elements.detailTags.innerHTML = project.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
-  elements.detailUrl.href = normalizeUrl(project.url);
+  elements.detailDescription.textContent = project.description || "Без описания.";
   elements.detailUrl.textContent = project.url;
   elements.detailUpdated.textContent = formatDate(project.updated);
   elements.detailNotes.textContent = project.notes || "Заметок пока нет.";
   elements.openProjectLink.href = normalizeUrl(project.url);
-}
-
-function getFilteredProjects() {
-  const query = elements.searchInput.value.trim().toLowerCase();
-  const status = elements.statusFilter.value;
-
-  return projects.filter((project) => {
-    const matchesStatus = status === "all" || project.status === status;
-    const haystack = [project.name, project.url, project.description, project.notes, project.tags.join(" ")]
-      .join(" ")
-      .toLowerCase();
-    return matchesStatus && (!query || haystack.includes(query));
-  });
+  elements.detailTags.replaceChildren(
+    ...(project.tags ?? []).map((tag) => {
+      const item = document.createElement("span");
+      item.textContent = tag;
+      return item;
+    }),
+  );
 }
 
 function openDialog(project) {
-  const isEditing = Boolean(project);
-  elements.formTitle.textContent = isEditing ? "Редактировать проект" : "Новый проект";
+  elements.form.reset();
+  elements.formTitle.textContent = project ? "Редактировать проект" : "Новый проект";
   elements.id.value = project?.id ?? "";
   elements.name.value = project?.name ?? "";
   elements.url.value = project?.url ?? "";
   elements.description.value = project?.description ?? "";
   elements.status.value = project?.status ?? "testing";
   elements.updated.value = project?.updated ?? new Date().toISOString().slice(0, 10);
-  elements.tags.value = project?.tags?.join(", ") ?? "";
+  elements.tags.value = (project?.tags ?? []).join(", ");
   elements.image.value = project?.image ?? "";
   elements.notes.value = project?.notes ?? "";
   elements.dialog.showModal();
@@ -226,11 +228,8 @@ function saveProject(event) {
   };
 
   const existingIndex = projects.findIndex((project) => project.id === id);
-  if (existingIndex >= 0) {
-    projects[existingIndex] = nextProject;
-  } else {
-    projects = [nextProject, ...projects];
-  }
+  if (existingIndex >= 0) projects[existingIndex] = nextProject;
+  else projects = [nextProject, ...projects];
 
   selectedId = id;
   persistProjects();
@@ -241,9 +240,7 @@ function saveProject(event) {
 function deleteSelectedProject() {
   const project = projects.find((item) => item.id === selectedId);
   if (!project) return;
-
-  const confirmed = window.confirm(`Удалить "${project.name}" из галереи?`);
-  if (!confirmed) return;
+  if (!window.confirm(`Удалить "${project.name}" из галереи?`)) return;
 
   projects = projects.filter((item) => item.id !== selectedId);
   selectedId = projects[0]?.id ?? null;
@@ -291,9 +288,7 @@ function getInitials(name) {
 
 function normalizeUrl(url) {
   if (/^https?:\/\//i.test(url)) return url;
-  if (/^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)(:\d+)?/i.test(url)) {
-    return `http://${url}`;
-  }
+  if (/^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)(:\d+)?/i.test(url)) return `http://${url}`;
   return `https://${url}`;
 }
 
